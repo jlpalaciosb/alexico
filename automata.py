@@ -15,7 +15,8 @@ class NFA:
     @staticmethod
     def char(c):
         ret = NFA()
-        ret.symbols = [c]
+        if c != 'E':
+            ret.symbols = [c]
         ret.num_states = 2
         ret.accepting_states = [1]
         ret.transition_functions = [[0, c, 1]]
@@ -86,84 +87,169 @@ class NFA:
         for tf in self.transition_functions:
             ret.transition_functions.append([tf[0] + 1, tf[1], tf[2] + 1])
         return ret
+    
+    def opt(self):
+        return self.orr(NFA.char('E'))
+    
+    def plus(self):
+        return self.concat(self.kleene())
+    
+    # agregar 0' ---E---> 0
+    def extra_initial_state(self):
+        ret = NFA()
+        ret.symbols = list(self.symbols)
+        ret.num_states = self.num_states + 1
+        for s in self.accepting_states:
+            ret.accepting_states.append(s + 1)
+        ret.transition_functions.append([0, 'E', 1])
+        for tf in self.transition_functions:
+            ret.transition_functions.append([tf[0] + 1, tf[1], tf[2] + 1])
+        return ret
+    
+    def to_dfa(self):
+        nfa = self.extra_initial_state() # asegura un solo init_state y init_state=0
+        dfa = DFA()
+        dfa.symbols = list(nfa.symbols)
+
+        d_estados = [nfa.e_cerradura([0])]
+        i = 0
+        while i < len(d_estados):
+            t = d_estados[i]
+            for a in nfa.symbols:
+                u = nfa.e_cerradura(nfa.mover(t, a))
+                if u == []: continue
+                if u not in d_estados:
+                    d_estados.append(u)
+                j = d_estados.index(u)
+                dfa.transition_functions.append([i, a, j])
+            i += 1
+
+        dfa.num_states = len(d_estados)
+        for ds in d_estados:
+            if list(set(ds) & set(nfa.accepting_states)) != []:
+                dfa.accepting_states.append(d_estados.index(ds))
+        return dfa
 
 
+# igual a NFA por que un DFA es tambien un NFA
 class DFA:
     def __init__(self):
-        self.num_states = 0
         self.symbols = []
-        self.num_accepting_states = 0
+        self.num_states = 0 # Ej.: 3 then 0, 1, 2; start state is always 0
         self.accepting_states = []
-        self.start_state = 0
         self.transition_functions = []
-        self.q = []
     
+    def test(self, str):
+        s = 0
+        i = 0
+        while i < len(str) and s is not None:
+            a = str[i]
+            next_s = None
+            for tf in self.transition_functions:
+                if tf[0] == s and tf[1] == a:
+                    next_s = tf[2]
+                    break
+            s = next_s
+            i += 1
+        return s in self.accepting_states
     
-    def convert_from_nfa(self, nfa):
-        self.symbols = nfa.symbols
-        self.start_state = nfa.start_state
-
-        nfa_transition_dict = {}
-        dfa_transition_dict = {}
-        
-        # Combine NFA transitions
-        for transition in nfa.transition_functions:
-            starting_state = transition[0]
-            transition_symbol = transition[1]
-            ending_state = transition[2]
-            
-            if (starting_state, transition_symbol) in nfa_transition_dict:
-                nfa_transition_dict[(starting_state, transition_symbol)].append(ending_state)
-            else:
-                nfa_transition_dict[(starting_state, transition_symbol)] = [ending_state]
-
-        self.q.append((0,))
-        
-        # Convert NFA transitions to DFA transitions
-        for dfa_state in self.q:
-            for symbol in nfa.symbols:
-                if len(dfa_state) == 1 and (dfa_state[0], symbol) in nfa_transition_dict:
-                    dfa_transition_dict[(dfa_state, symbol)] = nfa_transition_dict[(dfa_state[0], symbol)]
-                    
-                    if tuple(dfa_transition_dict[(dfa_state, symbol)]) not in self.q:
-                        self.q.append(tuple(dfa_transition_dict[(dfa_state, symbol)]))
-                else:
-                    destinations = []
-                    final_destination = []
-                    
-                    for nfa_state in dfa_state:
-                        if (nfa_state, symbol) in nfa_transition_dict and nfa_transition_dict[(nfa_state, symbol)] not in destinations:
-                            destinations.append(nfa_transition_dict[(nfa_state, symbol)])
-                    
-                    if not destinations:
-                        final_destination.append(None)
-                    else:  
-                        for destination in destinations:
-                            for value in destination:
-                                if value not in final_destination:
-                                    final_destination.append(value)
-                        
-                    dfa_transition_dict[(dfa_state, symbol)] = final_destination
-                        
-                    if tuple(final_destination) not in self.q:
-                        self.q.append(tuple(final_destination))
-
-        # Convert NFA states to DFA states            
-        for key in dfa_transition_dict:
-            self.transition_functions.append((self.q.index(tuple(key[0])), key[1], self.q.index(tuple(dfa_transition_dict[key]))))
-        
-        for q_state in self.q:
-            for nfa_accepting_state in nfa.accepting_states:
-                if nfa_accepting_state in q_state:
-                    self.accepting_states.append(self.q.index(q_state))
-                    self.num_accepting_states += 1
+    def print(self):
+        print('Symbols → ' + str(self.symbols))
+        print('States → ' + str(list(range(self.num_states))))
+        print('StartState → ' + str(0))
+        print('AcceptingStates → ' + str(self.accepting_states))
+        print('TransitionFunctions → ' + str(self.transition_functions))
 
 
-    def print_dfa(self):
-        print(len(self.q))
-        print("".join(self.symbols))
-        print(str(self.num_accepting_states) + " " + " ".join(str(accepting_state) for accepting_state in self.accepting_states))
-        print(self.start_state)
-        
-        for transition in sorted(self.transition_functions):
-            print(" ".join(str(value) for value in transition))
+def add_concat_op(regex, alpha):
+    ret = regex[0]
+    for i in range(1, len(regex)):
+        prev = regex[i - 1]
+        curr = regex[i]
+        if (curr in alpha or curr == '(' or curr == 'E') and (prev != '(' and prev != '|'):
+            ret += '.'
+        ret += curr
+    print(ret)
+    return ret
+
+
+def elim_parent(regex):
+    if regex[0] == '(':
+        c = 1
+        i = 1
+        while i < len(regex):
+            if regex[i] == '(':
+                c += 1
+            elif regex[i] == ')':
+                c -= 1
+            if c == 0:
+                break
+            i += 1
+        if i == (len(regex) - 1):
+            return regex[1:-1]
+        else:
+            return regex
+    else:
+        return regex
+
+
+def char_split(regex, char):
+    poss = []
+
+    c = 0
+    for i in range(len(regex)):
+        ch = regex[i]
+        if ch == '(':
+            c += 1
+        elif ch == ')':
+            c -= 1
+        elif ch == char and c == 0:
+            poss.append(i)
+    
+    ret = []
+    r = ''
+    for i in range(len(regex)):
+        if i in poss:
+            ret.append(r)
+            r = ''
+        else:
+            r += regex[i]
+    ret.append(r)
+    
+    return ret
+    
+
+def regex_to_nfa(regex):
+    while regex != elim_parent(regex):
+        regex = elim_parent(regex)
+
+    if len(regex) == 1:
+        return NFA.char(regex)
+    
+    or_split = char_split(regex, '|')
+    if len(or_split) > 1:
+        nfa = regex_to_nfa(or_split[0])
+        for r in or_split[1:]:
+            nfa = nfa.orr(regex_to_nfa(r))
+        return nfa
+
+    concat_split = char_split(regex, '.')
+    if len(concat_split) > 1:
+        nfa = regex_to_nfa(concat_split[0])
+        for r in concat_split[1:]:
+            nfa = nfa.concat(regex_to_nfa(r))
+        return nfa
+
+    if regex[-1] == '?':
+        nfa = regex_to_nfa(regex[:-1])
+        return nfa.opt()
+    
+    if regex[-1] == '*':
+        nfa = regex_to_nfa(regex[:-1])
+        return nfa.kleene()
+    
+    if regex[-1] == '+':
+        nfa = regex_to_nfa(regex[:-1])
+        return nfa.plus()
+    
+    raise Exception('nfa to regex error')

@@ -43,5 +43,17 @@ from automata import NFA
 # nfa_or.kleene().print()
 
 #nfa = NFA.char('a').concat(NFA.char('c').orr(NFA.char('d').kleene()))
-nfa = NFA.char('a').concat(NFA.char('b')).concat(NFA.char('c')).concat(NFA.char('d')).concat(NFA.char('e'))
-nfa.print()
+# nfa = NFA.char('E').concat(NFA.char('a')).concat(NFA.char('E')).concat(NFA.char('E')).concat(NFA.char('c').kleene().concat(NFA.char('c'))).concat(NFA.char('E'))
+
+# a ( [ a-e ]* a )?
+nfa = NFA.char('a').concat(
+    (
+        (
+            NFA.char('a').orr(NFA.char('b')).orr(NFA.char('c')).orr(NFA.char('d')).orr(NFA.char('e'))
+        ).kleene().concat(NFA.char('a'))
+    ).orr(NFA.char('E'))
+)
+
+dfa = nfa.to_dfa()
+dfa.print()
+print(dfa.test('a'))
