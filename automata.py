@@ -169,7 +169,26 @@ def add_concat_op(regex, alpha):
         if (curr in alpha or curr == '(' or curr == 'E') and (prev != '(' and prev != '|'):
             ret += '.'
         ret += curr
-    print(ret)
+    return ret
+
+
+def conv_rangos(regex):
+    ret = ''
+    i = 0
+    while i < len(regex):
+        ch = regex[i]
+        if ch == '[':
+            ch1 = regex[i+1]
+            ch2 = regex[i+3]
+            ret += '('
+            ret += ch1
+            for j in range(ord(ch1) + 1, ord(ch2) + 1):
+                ret += '|'+chr(j)
+            ret += ')'
+            i += 5
+        else:
+            ret += ch
+            i += 1
     return ret
 
 
