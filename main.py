@@ -1,16 +1,18 @@
 from automata import NFA, DFA
-from funciones import add_concat_op, conv_rangos, regex_to_nfa, nfa_to_dfa
-
+from funciones import add_concat_op, conv_rangos, regex_to_nfa, nfa_to_dfa, replaceExpressions
 
 alpha = input('Alfabeto: ')
 n = int(input('Número de definiciones regulares: '))
 print()
 
+defs_regs = []
+print('Ingrese las %d definiciones regulares.' % n)
+for i in range(n): defs_regs.append(input())
+print()
+defs_regs = replaceExpressions(defs_regs)
 
 regexs = []
-print('Ingrese las %d definiciones regulares.' % n)
-for i in range(n):
-    def_reg = input()
+for def_reg in defs_regs:
     nombre = def_reg[:(def_reg.index('->') - 1)]
     regex = def_reg[(def_reg.index('->') + 3):]
     regex = conv_rangos(regex)
@@ -21,7 +23,6 @@ for i in range(n):
         'dfa': nfa_to_dfa(regex_to_nfa(regex))
     })
 print()
-
 
 cadena = input('Ingrese la cadena.\n')
 print()
