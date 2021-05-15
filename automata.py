@@ -5,6 +5,7 @@ class NFA:
         self.accepting_states = []
         self.transition_functions = []
     
+    # Thompson
     @staticmethod
     def char(c):
         ret = NFA()
@@ -15,25 +16,7 @@ class NFA:
         ret.transition_functions = [[0, c, 1]]
         return ret
     
-    def e_cerradura(self, t):
-        ret = []
-        for s in t: ret.append(s)
-        i = 0
-        while i < len(ret):
-            s = ret[i]
-            for tf in self.transition_functions:
-                if tf[0] == s and tf[1] == 'E' and tf[2] not in ret:
-                    ret.append(tf[2])
-            i += 1
-        return ret
-    
-    def mover(self, t, a):
-        ret = []
-        for tf in self.transition_functions:
-            if tf[0] in t and tf[1] == a and tf[2] not in ret:
-                ret.append(tf[2])
-        return ret
-    
+    # Thompson
     def concat(self, nfa2):
         nfa1 = self
         ret = NFA()
@@ -49,6 +32,7 @@ class NFA:
             ret.accepting_states.append(s + nfa1.num_states)
         return ret
     
+    # Thompson
     def orr(self, nfa2):
         nfa1 = self
         ret = NFA()
@@ -67,6 +51,7 @@ class NFA:
             ret.transition_functions.append([s + nfa1.num_states + 1, 'E', ret.num_states - 1])
         return ret
     
+    # Thompson
     def kleene(self):
         ret = NFA()
         ret.symbols = list(self.symbols)
@@ -81,48 +66,35 @@ class NFA:
             ret.transition_functions.append([tf[0] + 1, tf[1], tf[2] + 1])
         return ret
     
+    # Thompson
     def opt(self):
         return self.orr(NFA.char('E'))
     
+    # Thompson
     def plus(self):
         return self.concat(self.kleene())
-    
-    # agregar 0' ---E---> 0
-    def extra_initial_state(self):
-        ret = NFA()
-        ret.symbols = list(self.symbols)
-        ret.num_states = self.num_states + 1
-        for s in self.accepting_states:
-            ret.accepting_states.append(s + 1)
-        ret.transition_functions.append([0, 'E', 1])
-        for tf in self.transition_functions:
-            ret.transition_functions.append([tf[0] + 1, tf[1], tf[2] + 1])
+
+    # Para alg de subconjuntos
+    def e_cerradura(self, t):
+        ret = []
+        for s in t: ret.append(s)
+        i = 0
+        while i < len(ret):
+            s = ret[i]
+            for tf in self.transition_functions:
+                if tf[0] == s and tf[1] == 'E' and tf[2] not in ret:
+                    ret.append(tf[2])
+            i += 1
         return ret
     
-    def to_dfa(self):
-        nfa = self.extra_initial_state() # asegura un solo init_state y init_state=0
-        dfa = DFA()
-        dfa.symbols = list(nfa.symbols)
-
-        d_estados = [nfa.e_cerradura([0])]
-        i = 0
-        while i < len(d_estados):
-            t = d_estados[i]
-            for a in nfa.symbols:
-                u = nfa.e_cerradura(nfa.mover(t, a))
-                if u == []: continue
-                if u not in d_estados:
-                    d_estados.append(u)
-                j = d_estados.index(u)
-                dfa.transition_functions.append([i, a, j])
-            i += 1
-
-        dfa.num_states = len(d_estados)
-        for ds in d_estados:
-            if list(set(ds) & set(nfa.accepting_states)) != []:
-                dfa.accepting_states.append(d_estados.index(ds))
-        return dfa
-
+    # Para alg de subconjuntos
+    def mover(self, t, a):
+        ret = []
+        for tf in self.transition_functions:
+            if tf[0] in t and tf[1] == a and tf[2] not in ret:
+                ret.append(tf[2])
+        return ret
+    
     def print(self):
         print('Symbols → ' + str(self.symbols))
         print('States → ' + str(list(range(self.num_states))))

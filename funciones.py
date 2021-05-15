@@ -1,4 +1,5 @@
-from automata import NFA
+from automata import NFA, DFA
+
 
 def add_concat_op(regex, alpha):
     ret = regex[0]
@@ -111,3 +112,41 @@ def regex_to_nfa(regex):
         return nfa.plus()
     
     raise Exception('nfa to regex error')
+
+
+# agregar 0' ---E---> 0
+def extra_initial_state(nfa):
+    ret = NFA()
+    ret.symbols = list(nfa.symbols)
+    ret.num_states = nfa.num_states + 1
+    for s in nfa.accepting_states:
+        ret.accepting_states.append(s + 1)
+    ret.transition_functions.append([0, 'E', 1])
+    for tf in nfa.transition_functions:
+        ret.transition_functions.append([tf[0] + 1, tf[1], tf[2] + 1])
+    return ret
+
+
+def nfa_to_dfa(nfa):
+    nfa = extra_initial_state(nfa) # asegura un solo init_state y init_state=0
+    dfa = DFA()
+    dfa.symbols = list(nfa.symbols)
+
+    d_estados = [nfa.e_cerradura([0])]
+    i = 0
+    while i < len(d_estados):
+        t = d_estados[i]
+        for a in nfa.symbols:
+            u = nfa.e_cerradura(nfa.mover(t, a))
+            if u == []: continue
+            if u not in d_estados:
+                d_estados.append(u)
+            j = d_estados.index(u)
+            dfa.transition_functions.append([i, a, j])
+        i += 1
+
+    dfa.num_states = len(d_estados)
+    for ds in d_estados:
+        if list(set(ds) & set(nfa.accepting_states)) != []:
+            dfa.accepting_states.append(d_estados.index(ds))
+    return dfa
