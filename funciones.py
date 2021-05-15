@@ -150,3 +150,46 @@ def nfa_to_dfa(nfa):
         if list(set(ds) & set(nfa.accepting_states)) != []:
             dfa.accepting_states.append(d_estados.index(ds))
     return dfa
+
+
+def replaceExpressions(arr_exp):
+    arr_exp = list(map(leftStrip,arr_exp))
+    arr_exp = list(map(rightStrip,arr_exp))
+    output_list = list(map(saveToDic, arr_exp))   
+    search_and_replace(output_list)
+    ret = search_and_replace(output_list)  
+    return list(map(formatExp,ret))   
+
+
+def formatExp(dic):
+    return '--'.join('{} -> {}'.format(key, value) for key, value in dic.items())
+
+
+def saveToDic(str_exp):
+    arr_items = str_exp.split(' ')
+    dic_exp = {}
+    dic_exp[arr_items[0]] = arr_items[2]
+    return dic_exp
+
+
+def leftStrip(exp):
+    return exp.lstrip()
+
+
+def rightStrip(exp):
+    return exp.rstrip()
+
+
+def search_and_replace(arr_exp):
+    for val in arr_exp:
+        for val_in in arr_exp:
+            aux_1 = list(val.keys())[0]
+            aux_2 = list(val_in.keys())[0]
+            if aux_1!=aux_2:
+                if str(list(val.keys())[0]) in str(list(val_in.values())[0]):
+                    aux = str(list(val_in.values())[0]).replace(
+                        str(list(val.keys())[0]),
+                        '('+str(list(val.values())[0])+')'
+                    )                    
+                    val_in[str(list(val_in.keys())[0])]=aux
+    return arr_exp
