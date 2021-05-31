@@ -34,3 +34,5 @@ for lexema in cadena.split():
     if not match:
         print(lexema + ' -> ??')
 print()
+
+regexs[0]['dfa'].print()

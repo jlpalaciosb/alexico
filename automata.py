@@ -126,8 +126,21 @@ class DFA:
         return s in self.accepting_states
     
     def print(self):
-        print('Symbols → ' + str(self.symbols))
+        print('Symbols → ' + str(sorted(self.symbols)))
         print('States → ' + str(list(range(self.num_states))))
-        print('StartState → ' + str(0))
-        print('AcceptingStates → ' + str(self.accepting_states))
-        print('TransitionFunctions → ' + str(self.transition_functions))
+        print('Start state → ' + str(0))
+        print('Accepting states → ' + str(self.accepting_states))
+        print('Transition functions → ' + str(self.transition_functions))
+        print('State-transition table: ')
+        print('\t', end='')
+        for sy in sorted(self.symbols): print(sy, end='\t')
+        print()
+        for st_in in range(self.num_states):
+            print(st_in, end='\t')
+            for sy in sorted(self.symbols):
+                st_out = None
+                for tf in self.transition_functions:
+                    if tf[0] == st_in and tf[1] == sy:
+                        st_out = tf[2]
+                print(st_out or 'x', end='\t')
+            print()
