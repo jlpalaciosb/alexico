@@ -26,7 +26,7 @@ if __name__ == '__main__':
     arr.append('C -> D')
     arr.append('F -> 01+')
     arr.append('A -> B')
-    arr.append('B -> C')
+    arr.append('B -> C|F')
     arr.append('D -> E')
     arr.append('E -> F')
 

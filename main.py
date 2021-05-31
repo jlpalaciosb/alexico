@@ -5,10 +5,8 @@ alpha = input('Alfabeto: ')
 n = int(input('Número de definiciones regulares: '))
 print()
 
-defs_regs = []
 print('Ingrese las %d definiciones regulares.' % n)
-for i in range(n): defs_regs.append(input())
-print()
+defs_regs = [ input() for i in range(n) ]
 defs_regs = replaceExpressions(defs_regs)
 
 regexs = []
@@ -24,14 +22,15 @@ for def_reg in defs_regs:
     })
 print()
 
-cadena = input('Ingrese la cadena.\n')
+cadena = input('Ingrese la cadena a analizar:\n')
 print()
 for lexema in cadena.split():
     match = False
     for regex in regexs:
         if regex['dfa'].test(lexema):
             match = True
-            print(lexema + ' -> ' + regex['nombre'], end='\n\n')
+            print(lexema + ' -> ' + regex['nombre'])
             break
     if not match:
-        print(lexema + ' → <<unknown>>', end='\n\n')
+        print(lexema + ' -> ??')
+print()
