@@ -42,6 +42,7 @@ print()
 # análisis léxico
 cadena = input('Ingrese la cadena a analizar:\n')
 print()
+print('<< TABLA DE SÍMBOLOS >>')
 for lexema in cadena.split():
     match = False
     for regex in regexs:
